@@ -13,8 +13,30 @@ public class PlayerInteraction : MonoBehaviour
 
     private IInteractable currentTarget;
 
+    private void Awake()
+    {
+        if (cameraTransform == null)
+        {
+            Camera cam = GetComponentInChildren<Camera>();
+            if (cam != null)
+            {
+                cameraTransform = cam.transform;
+            }
+        }
+    }
+
     private void Update()
     {
+        // New Input System 키보드/마우스 직접 폴링 지원 (PlayerInput 유무와 무관하게 즉시 동작)
+        if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
+        {
+            TryInteract();
+        }
+        else if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            TryInteract();
+        }
+
         PerformRaycast();
     }
 
@@ -43,12 +65,20 @@ public class PlayerInteraction : MonoBehaviour
         currentPrompt = "";
     }
 
-    // New Input System: Interact Action (E 키 또는 좌클릭)
-    public void OnInteract(InputValue value)
+    public void TryInteract()
     {
-        if (value.isPressed && currentTarget != null)
+        if (currentTarget != null)
         {
             currentTarget.Interact();
+        }
+    }
+
+    // New Input System: Interact Action (E 키 또는 액션 매핑)
+    public void OnInteract(InputValue value)
+    {
+        if (value.isPressed)
+        {
+            TryInteract();
         }
     }
 
@@ -83,19 +113,27 @@ public class PlayerInteraction : MonoBehaviour
         }
     }
 
-    // 화면 UI에 현재 상호작용 프롬프트 표시 (디버그 및 피드백용)
+    // 화면 UI에 조준점(Crosshair) 및 상호작용 프롬프트 표시
     private void OnGUI()
     {
+        // 1. 화면 정중앙 조준점 (+)
+        GUIStyle crosshairStyle = new GUIStyle();
+        crosshairStyle.fontSize = 20;
+        crosshairStyle.normal.textColor = Color.white;
+        crosshairStyle.alignment = TextAnchor.MiddleCenter;
+        GUI.Label(new Rect(Screen.width / 2f - 10, Screen.height / 2f - 10, 20, 20), "+", crosshairStyle);
+
+        // 2. 상호작용 가능 시 안내 문구
         if (!string.IsNullOrEmpty(currentPrompt))
         {
-            GUIStyle style = new GUIStyle();
-            style.fontSize = 22;
-            style.normal.textColor = Color.yellow;
-            style.alignment = TextAnchor.MiddleCenter;
+            GUIStyle promptStyle = new GUIStyle();
+            promptStyle.fontSize = 22;
+            promptStyle.fontStyle = FontStyle.Bold;
+            promptStyle.normal.textColor = Color.yellow;
+            promptStyle.alignment = TextAnchor.MiddleCenter;
 
-            // 화면 정중앙 하단에 안내 문구 출력
-            Rect rect = new Rect(Screen.width / 2f - 150, Screen.height / 2f + 50, 300, 40);
-            GUI.Label(rect, currentPrompt, style);
+            Rect rect = new Rect(Screen.width / 2f - 200, Screen.height / 2f + 40, 400, 40);
+            GUI.Label(rect, currentPrompt, promptStyle);
         }
     }
 }
